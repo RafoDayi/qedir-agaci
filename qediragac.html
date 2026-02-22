@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qədir Ağacı Reyestri</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌳</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Nunito:wght@300;400&subset=latin,latin-ext&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --green-deep: #2d5a27;
+    --green-mid: #4a7c3f;
+    --green-soft: #7daa6e;
+    --green-pale: #e6f0e3;
+    --cream: #faf7f2;
+    --brown: #7a5c3a;
+    --brown-light: #c4a882;
+    --text: #2a2a2a;
+    --muted: #7a7a7a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--cream);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 300;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  /* ── LOADER ── */
+  #loader {
+    position: fixed;
+    inset: 0;
+    background: var(--cream);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .loader-scene {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .loader-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--green-mid);
+    font-size: 14px;
+    letter-spacing: 2px;
+    opacity: 0;
+    animation: fadeInLabel 0.6s ease 0.4s forwards;
+  }
+
+  @keyframes fadeInLabel {
+    to { opacity: 0.8; }
+  }
+
+  /* SVG tree grows from bottom */
+  .loader-tree svg {
+    width: 120px;
+    height: 160px;
+  }
+
+  /* trunk */
+  .trunk {
+    stroke: var(--brown);
+    stroke-width: 6;
+    stroke-linecap: round;
+    fill: none;
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    animation: drawTrunk 0.7s ease 0.1s forwards;
+  }
+  @keyframes drawTrunk {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* branches */
+  .branch {
+    stroke: var(--brown);
+    stroke-width: 3;
+    stroke-linecap: round;
+    fill: none;
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+  }
+  .b1 { animation: drawBranch 0.5s ease 0.7s forwards; }
+  .b2 { animation: drawBranch 0.5s ease 0.85s forwards; }
+  .b3 { animation: drawBranch 0.5s ease 1.0s forwards; }
+  @keyframes drawBranch {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* leaves */
+  .leaf {
+    opacity: 0;
+    transform-origin: center;
+  }
+  .l1 { animation: popLeaf 0.4s ease 1.1s forwards; }
+  .l2 { animation: popLeaf 0.4s ease 1.2s forwards; }
+  .l3 { animation: popLeaf 0.4s ease 1.3s forwards; }
+  .l4 { animation: popLeaf 0.4s ease 1.4s forwards; }
+  .l5 { animation: popLeaf 0.4s ease 1.5s forwards; }
+  @keyframes popLeaf {
+    0% { opacity: 0; transform: scale(0.2); }
+    60% { opacity: 1; transform: scale(1.15); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* heart on top */
+  .loader-heart {
+    font-size: 20px;
+    opacity: 0;
+    animation: fadeHeart 0.5s ease 1.8s forwards;
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  @keyframes fadeHeart {
+    0% { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  .loader-tree { position: relative; }
+
+  /* dots */
+  .loader-dots {
+    display: flex;
+    gap: 6px;
+    margin-top: 18px;
+    opacity: 0;
+    animation: fadeInLabel 0.4s ease 1.7s forwards;
+  }
+  .loader-dots span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green-soft);
+    animation: bounce 1s ease infinite;
+  }
+  .loader-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loader-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  /* ── BACKGROUND DECORATION ── */
+  .bg-leaves {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .bg-leaf {
+    position: absolute;
+    font-size: 28px;
+    opacity: 0.06;
+    animation: sway 6s ease-in-out infinite alternate;
+  }
+  @keyframes sway {
+    from { transform: rotate(-8deg) translateY(0px); }
+    to   { transform: rotate(8deg) translateY(8px); }
+  }
+
+  /* ── MAIN CARD ── */
+  #main {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  #main.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 48px 40px 44px;
+    box-shadow: 0 4px 40px rgba(45,90,39,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* decorative corner vine */
+  .card::before {
+    content: '🌿';
+    position: absolute;
+    top: 14px; right: 18px;
+    font-size: 22px;
+    opacity: 0.3;
+    transform: scaleX(-1);
+  }
+  .card::after {
+    content: '🌿';
+    position: absolute;
+    bottom: 14px; left: 18px;
+    font-size: 22px;
+    opacity: 0.2;
+  }
+
+  .card-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+    animation: gentleSway 4s ease-in-out infinite alternate;
+  }
+  @keyframes gentleSway {
+    from { transform: rotate(-3deg); }
+    to   { transform: rotate(3deg); }
+  }
+
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--green-deep);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .subtitle {
+    font-size: 12.5px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .divider {
+    width: 40px;
+    height: 1px;
+    background: var(--brown-light);
+    margin: 0 auto 28px;
+    opacity: 0.6;
+  }
+
+  .input-wrap {
+    position: relative;
+    margin-bottom: 18px;
+  }
+
+  .input-wrap label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-align: left;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid #e0dbd3;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    color: var(--text);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  input[type="text"]:focus {
+    border-color: var(--green-soft);
+    box-shadow: 0 0 0 3px rgba(125, 170, 110, 0.12);
+  }
+  input[type="text"]::placeholder {
+    letter-spacing: 0.5px;
+    color: #c0bab2;
+    font-size: 13px;
+  }
+
+  button {
+    width: 100%;
+    padding: 13px;
+    background: var(--green-deep);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.15s, box-shadow 0.25s;
+    margin-top: 4px;
+  }
+  button:hover {
+    background: var(--green-mid);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(45,90,39,0.18);
+  }
+  button:active {
+    transform: translateY(0);
+  }
+
+  /* ── RESULT ── */
+  #result {
+    margin-top: 28px;
+    text-align: left;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  #result.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .result-card {
+    background: var(--green-pale);
+    border-radius: 12px;
+    padding: 24px 22px;
+    border-left: 3px solid var(--green-soft);
+  }
+
+  .result-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--green-deep);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .result-row {
+    display: flex;
+    gap: 8px;
+    font-size: 13.5px;
+    margin-bottom: 9px;
+    align-items: baseline;
+  }
+  .result-row .key {
+    color: var(--muted);
+    letter-spacing: 1px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding-top: 1px;
+  }
+  .result-row .val {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  .result-quote {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(125,170,110,0.3);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13.5px;
+    color: var(--brown);
+    line-height: 1.7;
+  }
+
+  .not-found {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    padding: 16px 0 4px;
+    font-style: italic;
+  }
+
+  /* shake on wrong code */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .shake { animation: shake 0.4s ease; }
+
+  /* stats bar */
+  .stats-bar {
+    margin-top: 18px;
+    background: white;
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 2px 12px rgba(45,90,39,0.06);
+  }
+  .stats-tree {
+    font-size: 20px;
+    animation: gentleSway 4s ease-in-out infinite alternate;
+  }
+  .stats-tree:nth-child(2) { animation-delay: 0.6s; font-size: 18px; }
+  .stats-text {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .stats-text strong {
+    color: var(--green-deep);
+    font-weight: 600;
+  }
+
+  /* footer note */
+  .footer-note {
+    margin-top: 20px;
+    font-size: 11px;
+    color: #c0bab2;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+
+<!-- BACKGROUND LEAVES -->
+<div class="bg-leaves">
+  <span class="bg-leaf" style="top:8%;left:5%;animation-delay:0s;font-size:36px;">🍃</span>
+  <span class="bg-leaf" style="top:20%;right:6%;animation-delay:1s;font-size:24px;">🌿</span>
+  <span class="bg-leaf" style="top:55%;left:3%;animation-delay:2s;font-size:20px;">🍃</span>
+  <span class="bg-leaf" style="top:70%;right:4%;animation-delay:0.5s;font-size:32px;">🌿</span>
+  <span class="bg-leaf" style="top:88%;left:12%;animation-delay:1.5s;font-size:22px;">🍃</span>
+  <span class="bg-leaf" style="top:40%;right:2%;animation-delay:3s;font-size:18px;">🍃</span>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-scene">
+    <div class="loader-tree">
+      <span class="loader-heart">🤍</span>
+      <svg viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- trunk -->
+        <line class="trunk" x1="60" y1="155" x2="60" y2="95"/>
+        <!-- branches -->
+        <line class="branch b1" x1="60" y1="120" x2="30" y2="90"/>
+        <line class="branch b2" x1="60" y1="110" x2="90" y2="75"/>
+        <line class="branch b3" x1="60" y1="100" x2="40" y2="65"/>
+        <!-- foliage circles -->
+        <circle class="leaf l1" cx="60" cy="68" r="22" fill="#7daa6e" opacity="0.85"/>
+        <circle class="leaf l2" cx="30" cy="76" r="17" fill="#5e8f53" opacity="0.8"/>
+        <circle class="leaf l3" cx="90" cy="62" r="19" fill="#4a7c3f" opacity="0.75"/>
+        <circle class="leaf l4" cx="44" cy="50" r="15" fill="#9fc491" opacity="0.8"/>
+        <circle class="leaf l5" cx="74" cy="48" r="13" fill="#7daa6e" opacity="0.7"/>
+      </svg>
+    </div>
+    <p class="loader-label">reyestr yüklənir</p>
+    <div class="loader-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="card">
+    <span class="card-icon">🌳</span>
+    <h2>Qədir Ağacı Reyestri</h2>
+    <p class="subtitle">Rəsmi Sənəd</p>
+    <div class="divider"></div>
+
+    <div class="input-wrap">
+      <label for="codeInput">Ağac Kodu</label>
+      <input type="text" id="codeInput" placeholder="kodunu daxil et" autocomplete="off" spellcheck="false">
+    </div>
+
+    <button onclick="checkCode()">Yoxla</button>
+
+    <div id="result"></div>
+  </div>
+
+  <div class="stats-bar">
+    <span class="stats-tree">🌳</span>
+    <span class="stats-tree">🌳</span>
+    <p class="stats-text">Sistemdə <strong>2</strong> qədir ağacı qeydiyyatdadır</p>
+  </div>
+
+  <p class="footer-note">Rəsmi Qədir Ağacı Reyestri · Rafo tərəfindən</p>
+</div>
+
+<script>
+  // ── Loader ──
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('hidden');
+      setTimeout(() => {
+        document.getElementById('main').classList.add('visible');
+      }, 100);
+    }, 2400);
+  });
+
+  // ── Enter key support ──
+  document.getElementById('codeInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkCode();
+  });
+
+  function checkCode() {
+    const trees = {
+      "BURAYA_KODU_YAZ":   { owner: "ONUN_ADI_1", quote: "\"Sən 'qədrimi bilmirsən' deyəndə...<br>mən bunu rəsmi hala gətirdim.\"" },
+      "BURAYA_KODU_YAZ_2": { owner: "ONUN_ADI_2", quote: "\"Hər ağac bir hissin rəsmi sübütudur.\"" },
+    };
+
+    const input = document.getElementById("codeInput").value.trim();
+    const resultDiv = document.getElementById("result");
+
+    resultDiv.classList.remove('show');
+
+    setTimeout(() => {
+      const tree = trees[input];
+      if (tree) {
+        const date = new Date().toLocaleDateString('az-AZ', {day:'numeric', month:'long', year:'numeric'});
+        resultDiv.innerHTML = `
+          <div class="result-card">
+            <h3>🌳 Qədir Agaci Tapildi</h3>
+            <div class="result-row">
+              <span class="key">Sahibi</span>
+              <span class="val">${tree.owner}</span>
+            </div>
+            <div class="result-row">
+              <span class="key">Əkən</span>
+              <span class="val">Rafo</span>
+            </div>
+            <div class="result-row">
+              <span class="key">Status</span>
+              <span class="val">Sevgi ilə böyüyür 🌱</span>
+            </div>
+            <div class="result-row">
+              <span class="key">Əkilmə tarixi</span>
+              <span class="val">${date}</span>
+            </div>
+            <p class="result-quote">${tree.quote}</p>
+          </div>
+        `;
+      } else {
+        document.getElementById('codeInput').classList.remove('shake');
+        void document.getElementById('codeInput').offsetWidth;
+        document.getElementById('codeInput').classList.add('shake');
+        resultDiv.innerHTML = `<p class="not-found">Bu agac sistemdə tapılmadı 🍂</p>`;
+      }
+      resultDiv.classList.add('show');
+    }, 120);
+  }
+</script>
+
+</body>
+</html>
